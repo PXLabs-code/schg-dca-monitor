@@ -1,0 +1,23 @@
+# 环境与密钥
+.env
+*.token
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# 运行时数据与日志
+data/*.csv
+data/*.meta
+data/*.json
+logs/
+
+# macOS
+.DS_Store

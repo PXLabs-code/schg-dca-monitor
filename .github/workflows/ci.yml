@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Ruff lint
+        run: ruff check .
+
+      - name: Pytest (indicators / strategy / state machine / telegram / backtest)
+        run: pytest -v
+        env:
+          # 测试使用模拟数据与模拟 Telegram，绝不发送真实消息
+          TELEGRAM_BOT_TOKEN: ""
+          TELEGRAM_CHAT_ID: ""
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Ensure no .env committed
+        run: |
+          if git ls-files | grep -E '(^|/)\.env$'; then
+            echo "::error::.env 文件不得提交到仓库"
+            exit 1
+          fi
+          if git grep -nE 'TELEGRAM_BOT_TOKEN\s*=\s*["'"'"'][0-9]{6,}:' -- '*.py' '*.sh' '*.yml' '*.yaml' '*.md'; then
+            echo "::error::检测到疑似硬编码的 Telegram Token"
+            exit 1
+          fi
+          echo "未发现提交的密钥"
