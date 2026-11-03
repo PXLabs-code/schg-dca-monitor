@@ -58,6 +58,7 @@ deploy/launchd/      # macOS 定时任务配置
 ```bash
 git clone https://github.com/PXLabs-code/schg-dca-monitor.git
 cd schg-dca-monitor
+git checkout copilot/initial-implementation
 ./install.sh
 ```
 
